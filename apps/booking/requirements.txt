@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+redis
+pika
+python-jose
+PyJWT
+starlette>=0.27.0

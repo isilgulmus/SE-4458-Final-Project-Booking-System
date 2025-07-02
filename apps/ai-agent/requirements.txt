@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+openai==0.28.1
+python-dotenv
+httpx
+pydantic         
+aiofiles  
+PyJWT
+starlette>=0.27.0

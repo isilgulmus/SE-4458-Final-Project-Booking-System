@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  hotel-admin:
+    build: ./apps/hotel-admin
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/hoteladmin
+      - SECRET_KEY=supersecret
+      - REDIS_HOST=redis
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hoteladmin
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  hotel-search:
+    build: ./apps/hotel-search
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=supersecret
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+      
+  booking:
+    build: ./apps/booking
+    ports:
+      - "8002:8002"
+    environment:
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+      - SECRET_KEY=supersecret
+    depends_on:
+      - redis
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"  
+      
+  notification:
+    build: ./apps/notification
+    depends_on:
+      - rabbitmq
+      - redis
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis
+
+  comments:
+    build: ./apps/comments
+    ports:
+      - "8003:8003"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+   
+  api-gateway:
+    build: ./apps/api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - hotel-admin
+      - hotel-search
+      - booking
+      - comments
+      - notification
+
+
+  ai-agent:
+    build: ./apps/ai-agent
+    ports:
+      - "8005:8005"
+    depends_on:
+      - api-gateway
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GATEWAY_URL=http://api-gateway:8080/api

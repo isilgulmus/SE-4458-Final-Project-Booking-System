@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-jose
+python-multipart
+PyJWT==2.8.0
+redis
+starlette>=0.27.0
